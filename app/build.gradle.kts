@@ -1,152 +1,133 @@
-import com.android.build.api.component.analytics.AnalyticsEnabledApplicationVariant
-import com.android.build.api.variant.impl.ApplicationVariantImpl
-import com.android.build.gradle.BaseExtension
-import com.android.ide.common.signing.KeystoreHelper
-import org.jetbrains.kotlin.konan.properties.Properties
-import java.io.PrintStream
+import com.android.build.api.dsl.Packaging
+import java.util.*
 
-val minSdkVer: Int by rootProject.extra
-val targetSdkVer: Int by rootProject.extra
-
-val appVerName: String by rootProject.extra
-val appVerCode: Int by rootProject.extra
-val serviceVer: Int by rootProject.extra
-val minExtensionVer: Int by rootProject.extra
-val minBackupVer: Int by rootProject.extra
-
-val gitCommitCount: String by rootProject.extra
-val gitCommitHash: String by rootProject.extra
-
-val properties = Properties()
-properties.load(project.rootProject.file("local.properties").inputStream())
+val officialBuild: Boolean by rootProject.extra
 
 plugins {
-    id("com.android.application")
-    id("com.google.gms.google-services")
-    kotlin("android")
+    alias(libs.plugins.agp.app)
+    alias(libs.plugins.autoresconfig)
+    alias(libs.plugins.materialthemebuilder)
+    alias(libs.plugins.refine)
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.nav.safeargs.kotlin)
+}
+
+if (officialBuild) {
+    plugins.apply(libs.plugins.gms.get().pluginId)
 }
 
 android {
-    compileSdk = targetSdkVer
+    namespace = "com.tsng.hidemyapplist"
 
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
 
-    defaultConfig {
-        applicationId = "com.tsng.hidemyapplist"
-        versionCode = appVerCode
-        versionName = appVerName
-        minSdk = minSdkVer
-        targetSdk = targetSdkVer
-
-        multiDexEnabled = false
-        if (properties.getProperty("buildWithGitSuffix").toBoolean())
-            versionNameSuffix = ".r${gitCommitCount}.${gitCommitHash}"
-
-        buildConfigField("int", "SERVICE_VERSION", serviceVer.toString())
-        buildConfigField("int", "MIN_EXTENSION_VERSION", minExtensionVer.toString())
-        buildConfigField("int", "MIN_BACKUP_VERSION", minBackupVer.toString())
-    }
-
-    signingConfigs.create("config") {
-        storeFile = file(properties.getProperty("fileDir"))
-        storePassword = properties.getProperty("storePassword")
-        keyAlias = properties.getProperty("keyAlias")
-        keyPassword = properties.getProperty("keyPassword")
-    }
-
-    buildTypes {
-        signingConfigs.named("config").get().also {
-            debug {
-                signingConfig = it
-            }
-            release {
-                signingConfig = it
-                isMinifyEnabled = true
-                isShrinkResources = true
-                proguardFiles("proguard-rules.pro")
-            }
+    packaging {
+        dex.useLegacyPackaging = true
+        resources {
+            excludes += arrayOf(
+                "/META-INF/*",
+                "/META-INF/androidx/**",
+                "/kotlin/**",
+                "/okhttp3/**",
+            )
         }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
-// This code is forked from LSPosed
-// Make a class containing a byte array of signature
-androidComponents.onVariants { v ->
-    val variant: ApplicationVariantImpl =
-        if (v is ApplicationVariantImpl) v
-        else (v as AnalyticsEnabledApplicationVariant).delegate as ApplicationVariantImpl
-    val variantCapped = variant.name.capitalize()
-    val variantLowered = variant.name.toLowerCase()
+kotlin {
+    jvmToolchain(21)
+}
 
-    variant.outputs.forEach {
-        it.outputFileName.set("V${it.versionName.get()}-${variant.buildType}.apk")
-    }
+autoResConfig {
+    generateClass.set(true)
+    generateRes.set(false)
+    generatedClassFullName.set("icu.nullptr.hidemyapplist.util.LangList")
+    generatedArrayFirstItem.set("SYSTEM")
+}
 
-    afterEvaluate {
-        val app = rootProject.project(":app").extensions.getByName<BaseExtension>("android")
-        val outSrcDir = file("$buildDir/generated/source/signInfo/${variantLowered}")
-        val outSrc = file("$outSrcDir/com/tsng/hidemyapplist/Magic.java")
-        val signInfoTask = tasks.register("generate${variantCapped}SignInfo") {
-            dependsOn(":app:validateSigning${variantCapped}")
-            outputs.file(outSrc)
-            doLast {
-                val sign = app.buildTypes.named(variantLowered).get().signingConfig
-                outSrc.parentFile.mkdirs()
-                val certificateInfo = KeystoreHelper.getCertificateInfo(
-                    sign?.storeType,
-                    sign?.storeFile,
-                    sign?.storePassword,
-                    sign?.keyPassword,
-                    sign?.keyAlias
-                )
-                PrintStream(outSrc).apply {
-                    println("package com.tsng.hidemyapplist;")
-                    println("public final class Magic {")
-                    print("public static final byte[] magicNumbers = {")
-                    val bytes = certificateInfo.certificate.encoded
-                    print(bytes.joinToString(",") { it.toString() })
-                    println("};")
-                    println("}")
-                }
+materialThemeBuilder {
+    themes {
+        for ((name, color) in listOf(
+            "Red" to "F44336",
+            "Pink" to "E91E63",
+            "Purple" to "9C27B0",
+            "DeepPurple" to "673AB7",
+            "Indigo" to "3F51B5",
+            "Blue" to "2196F3",
+            "LightBlue" to "03A9F4",
+            "Cyan" to "00BCD4",
+            "Teal" to "009688",
+            "Green" to "4FAF50",
+            "LightGreen" to "8BC3A4",
+            "Lime" to "CDDC39",
+            "Yellow" to "FFEB3B",
+            "Amber" to "FFC107",
+            "Orange" to "FF9800",
+            "DeepOrange" to "FF5722",
+            "Brown" to "795548",
+            "BlueGrey" to "607D8F",
+            "Sakura" to "FF9CA8"
+        )) {
+            create("Material$name") {
+                lightThemeFormat = "ThemeOverlay.Light.%s"
+                darkThemeFormat = "ThemeOverlay.Dark.%s"
+                primaryColor = "#$color"
             }
         }
-        variant.variantData.registerJavaGeneratingTask(signInfoTask, arrayListOf(outSrcDir))
-
-        val kotlinCompileTask =
-            tasks.findByName("compile${variant.name.capitalize()}Kotlin") as? SourceTask
-        if (kotlinCompileTask != null) {
-            kotlinCompileTask.dependsOn(signInfoTask)
-            val srcSet = objects.sourceDirectorySet("magic", "magic").srcDir(outSrcDir)
-            kotlinCompileTask.source(srcSet)
-        }
     }
+    // Add Material Design 3 color tokens (such as palettePrimary100) in generated theme
+    // rikka.material >= 2.0.0 provides such attributes
+    generatePalette = true
+}
+
+fun afterEval() = android.applicationVariants.forEach { variant ->
+    val variantCapped = variant.name.replaceFirstChar { it.titlecase(Locale.ROOT) }
+    val variantLowered = variant.name.lowercase(Locale.ROOT)
+
+    task<Sync>("build$variantCapped") {
+        dependsOn("assemble$variantCapped")
+        from(layout.buildDirectory.dir("outputs/apk/$variantLowered"))
+        into(layout.buildDirectory.dir("apk/$variantLowered"))
+        rename(".*.apk", "HMA-V${variant.versionName}-${variant.buildType.name}.apk")
+    }
+}
+
+afterEvaluate {
+    afterEval()
 }
 
 dependencies {
-    implementation("com.drakeet.about:about:2.5.0")
-    implementation("com.drakeet.multitype:multitype:4.3.0")
-    implementation("com.scwang.smart:refresh-layout-kernel:2.0.3")
-    implementation("com.scwang.smart:refresh-header-material:2.0.3")
-    implementation("com.github.kyuubiran:EzXHelper:0.6.1")
-    implementation("com.github.topjohnwu.libsu:core:3.1.2")
+    implementation(projects.common)
+    runtimeOnly(projects.xposed)
 
-    implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.google.android.material:material:1.5.0")
-    implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.3")
-    implementation("androidx.appcompat:appcompat:1.4.1")
-    implementation("androidx.preference:preference-ktx:1.2.0")
-    implementation("androidx.fragment:fragment-ktx:1.4.1")
-    implementation("androidx.work:work-runtime-ktx:2.7.1")
-    implementation("com.google.android.gms:play-services-ads:20.5.0")
-    implementation("com.google.firebase:firebase-analytics-ktx:20.1.0")
+    implementation(platform(libs.com.google.firebase.bom))
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.preference.ktx)
+    implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.com.drakeet.about)
+    implementation(libs.com.drakeet.multitype)
+    implementation(libs.com.github.kirich1409.viewbindingpropertydelegate)
+    implementation(libs.com.github.liujingxing.rxhttp)
+    implementation(libs.com.github.liujingxing.rxhttp.converter.serialization)
+    implementation(libs.com.github.topjohnwu.libsu.core)
+    implementation(libs.com.google.android.material)
+    implementation(libs.com.google.android.gms.play.services.ads)
+    implementation(libs.com.google.firebase.analytics.ktx)
+    implementation(libs.com.squareup.okhttp3)
+    implementation(libs.dev.rikka.hidden.compat)
+    implementation(libs.dev.rikka.rikkax.material)
+    implementation(libs.dev.rikka.rikkax.material.preference)
+    implementation(libs.me.zhanghai.android.appiconloader)
+    compileOnly(libs.dev.rikka.hidden.stub)
+    ksp(libs.com.github.liujingxing.rxhttp.compiler)
+}
 
-    compileOnly("de.robv.android.xposed:api:82")
-    compileOnly("de.robv.android.xposed:api:82:sources")
+configurations.all {
+    exclude("androidx.appcompat", "appcompat")
 }

@@ -1,13 +1,4 @@
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://jcenter.bintray.com")
-        maven("https://jitpack.io")
-        maven("https://api.xposed.info/")
-    }
-}
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
     repositories {
@@ -15,13 +6,22 @@ pluginManagement {
         google()
         mavenCentral()
     }
-    plugins {
-        id("com.android.application").version("7.1.1")
-        id("com.android.library").version("7.1.1")
-        id("org.jetbrains.kotlin.android").version("1.6.10")
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven("https://jitpack.io")
+        maven("https://api.xposed.info/")
     }
 }
 
-rootProject.name = "Hide My Applist"
+rootProject.name = "HideMyApplist"
 
-include(":app")
+include(
+    ":app",
+    ":common",
+    ":xposed"
+)

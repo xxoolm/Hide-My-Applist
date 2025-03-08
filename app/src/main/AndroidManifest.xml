@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.tsng.hidemyapplist">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
@@ -10,40 +9,20 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".app.MyApplication"
+        android:name="icu.nullptr.hidemyapplist.MyApp"
         android:allowBackup="true"
         android:fullBackupOnly="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="false"
         android:theme="@style/AppTheme">
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="com.tsng.hidemyapplist.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_provider_paths" />
-        </provider>
-
-        <service
-            android:name=".app.SubmitConfigService"
-            android:enabled="true" />
-
-        <activity android:name=".app.ui.activities.ModuleActivity" />
-
         <activity
-            android:name="com.tsng.hidemyapplist.app.ui.activities.LogActivity"
-            android:label="@string/title_logs" />
-        <activity
-            android:name="com.tsng.hidemyapplist.app.ui.activities.AboutActivity"
+            android:name="icu.nullptr.hidemyapplist.ui.activity.AboutActivity"
             android:theme="@style/AppTheme.About" />
         <activity
-            android:name=".app.ui.activities.MainActivity"
-            android:exported="true">
+            android:name="icu.nullptr.hidemyapplist.ui.activity.MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="de.robv.android.xposed.category.MODULE_SETTINGS" />
@@ -54,12 +33,18 @@
             android:name=".MainActivityLauncher"
             android:exported="true"
             android:label="@string/app_name"
-            android:targetActivity=".app.ui.activities.MainActivity">
+            android:targetActivity="icu.nullptr.hidemyapplist.ui.activity.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <provider
+            android:name="icu.nullptr.hidemyapplist.service.ServiceProvider"
+            android:authorities="com.tsng.hidemyapplist.ServiceProvider"
+            android:exported="true"
+            tools:ignore="ExportedContentProvider" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
@@ -77,5 +62,4 @@
             android:name="xposedscope"
             android:resource="@array/xposed_scope" />
     </application>
-
 </manifest>
